@@ -1074,6 +1074,15 @@ class SubgameGUI:
         values = list(model.cells.values()) + list(model.combos.values())
         return max(values) if values else 1.0
 
+    def _hand_reach_scale(self, player: int) -> float | None:
+        base_weights = self.solution_base_weights.get(player, [])
+        if not base_weights:
+            return None
+        max_weight = max(base_weights)
+        if max_weight <= 0.0:
+            return None
+        return max_weight
+
     def _blend_color(self, base: str, accent: str, t: float) -> str:
         base = base.lstrip("#")
         accent = accent.lstrip("#")
@@ -1956,6 +1965,8 @@ class SubgameGUI:
                     raise_prob += row[a_idx]
             action_categories.append((fold_prob, call_prob, raise_prob))
 
+        hand_reach_scale = self._hand_reach_scale(player)
+
         for row_idx in range(len(RANK_GRID)):
             for col_idx in range(len(RANK_GRID)):
                 label = self._cell_label(row_idx, col_idx)
@@ -1971,7 +1982,11 @@ class SubgameGUI:
                 if class_weight <= 0.0 or class_reach <= 0.0:
                     self._draw_solution_cell(canvas, label, 0.0, 0.0, 0.0, 0.0)
                     continue
-                reach_ratio = class_reach / class_weight
+                if hand_reach_scale is None:
+                    reach_ratio = class_reach / class_weight
+                else:
+                    class_avg_reach = class_reach / len(indices)
+                    reach_ratio = class_avg_reach / hand_reach_scale
                 fold_sum = sum(reach_vec[idx] * action_categories[idx][0] for idx in indices)
                 call_sum = sum(reach_vec[idx] * action_categories[idx][1] for idx in indices)
                 raise_sum = sum(reach_vec[idx] * action_categories[idx][2] for idx in indices)
@@ -2031,7 +2046,12 @@ class SubgameGUI:
         base_weights = self.solution_base_weights.get(player, [])
         class_weight = sum(base_weights[idx] for idx in indices)
         class_reach = sum(reach_vec[idx] for idx in indices)
-        reach_ratio = class_reach / class_weight if class_weight > 0.0 else 0.0
+        hand_reach_scale = self._hand_reach_scale(player)
+        if hand_reach_scale is None:
+            reach_ratio = class_reach / class_weight if class_weight > 0.0 else 0.0
+        else:
+            class_avg_reach = class_reach / len(indices)
+            reach_ratio = class_avg_reach / hand_reach_scale
         call_sum = 0.0
         fold_sum = 0.0
         raise_sum = 0.0
@@ -2052,7 +2072,10 @@ class SubgameGUI:
                 continue
             hand = self.solution_hands[player][idx]
             base_weight = base_weights[idx] if idx < len(base_weights) else 0.0
-            reach_cond = reach_vec[idx] / base_weight if base_weight > 0.0 else 0.0
+            if hand_reach_scale is None:
+                reach_cond = reach_vec[idx] / base_weight if base_weight > 0.0 else 0.0
+            else:
+                reach_cond = reach_vec[idx] / hand_reach_scale
             row_probs = matrix[idx]
             action_parts = []
             for token, label_text in display_tokens:
