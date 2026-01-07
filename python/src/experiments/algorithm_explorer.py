@@ -319,15 +319,19 @@ class AlgorithmExplorer:
             )
             
             for config_dict in branch2_configs:
-                if "dcfr_alpha" in config_dict:
+                # Determine which config type based on keys present
+                if "dcfr_alpha" in config_dict or "use_plus" in config_dict:
                     config = CFRConfig(**config_dict)
                     trainer_factory = lambda: CFRTrainer(self.game, config)
                 elif "seed" in config_dict:
                     config = MCCFRConfig(**config_dict)
                     trainer_factory = lambda: ExternalSamplingMCCFRTrainer(self.game, config)
-                else:
+                elif "optimistic" in config_dict:
                     config = FPConfig(**config_dict)
                     trainer_factory = lambda: FictitiousPlayTrainer(self.game, config)
+                else:
+                    # Skip configs we can't classify
+                    continue
                 
                 result = self._run_experiment(
                     trainer_factory,
