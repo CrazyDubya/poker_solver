@@ -25,6 +25,12 @@ Python (Kuhn/Leduc):
 PYTHONPATH=python/src python -m cli.run_exploitability --game kuhn --algo cfr+
 ```
 
+Algorithm Tournament (compare multiple variants):
+
+```sh
+PYTHONPATH=python/src python -m cli.run_algorithm_tournament --game kuhn --mode comprehensive
+```
+
 Python (river defaults):
 
 ```sh
@@ -102,3 +108,5 @@ Advanced sizing arrays (`oop_first_bets`, `ip_first_bets`, `oop_first_raises`, `
 
 - Defaults use a uniform range, board `Ks Th 7s 4d 2s`, pot 1000, stacks 9500, and bet sizes `0.5, 1.0` with all-in enabled.
 - For subgames saved from the GUI, pass `--config path/to/subgame.json`.
+- See `docs/algorithm_investigation_report.md` for comprehensive algorithm analysis and recommendations.
+- See `docs/algorithm_tournament_README.md` for tournament framework documentation.
